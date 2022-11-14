@@ -6,15 +6,13 @@
 #
 # transferFrom moves tokens between 2 accounts, whereas transfer moves tokens from the sender to the recipient
 # transferFrom will only work if the amount to transfer from the transferring account has been approved by the caller
-# of the approve(..) function
+# of the approve(..) function beforehand
 #
 #
 # 2.
 import json
-
 import requests
 from typing import List
-
 from web3 import Web3
 from web3.contract import ConciseContract, Contract
 import argparse
@@ -71,7 +69,7 @@ def detect_approvals(address: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--address", help="a public address to check approvals for", type=str)
+    parser.add_argument("--address", help="a public address to check approvals for", type=str, required=True)
     args = parser.parse_args()
     detect_approvals(args.address)
 

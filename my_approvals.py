@@ -25,18 +25,19 @@ class EthConnecionError(Exception):
 alchemy_url = "https://eth-mainnet.g.alchemy.com/v2/EzCaMUftsyJk3sDarB8-hbnirCK4G1TE"
 
 
-def print_approval(contract: Contract, data: str) -> None:
+def print_approval(token_contract: Contract, data: str) -> None:
     amount = '∞' if data == '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' else int(data, 16)
     if amount != '∞':
-        amount *= 10**(-contract.decimals())
-    print(f"approval on {contract.name()} on amount of {amount}")
+        amount *= 10**(-token_contract.decimals())
+    print(f"approval on {token_contract.name()} on amount of {amount}")
 
 
 def print_approvals(approval_transactions: List[dict], w3: Web3) -> None:
-    eip20_abi = json.load(open('abi.json'))
+    abi = json.load(open('abi.json'))
+    approval_transactions.reverse()
     for approval in approval_transactions:
         receipt = w3.eth.get_transaction_receipt(approval['hash'])
-        token_contract = w3.eth.contract(Web3.toChecksumAddress(approval['to']), abi=eip20_abi,
+        token_contract = w3.eth.contract(Web3.toChecksumAddress(approval['to']), abi=abi,
                                          ContractFactoryClass=ConciseContract)
         for log in receipt.logs:
             print_approval(token_contract, log.data)

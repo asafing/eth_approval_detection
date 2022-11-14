@@ -4,12 +4,7 @@ import asyncio
 import requests
 import json
 
-class EthConnecionError(Exception):
-    pass
-
-
-class InvalidAddressError(Exception):
-    pass
+from web3.contract import ConciseContract
 
 
 async def get_block_chunk_logs(w3, address, chunk: int):
@@ -19,7 +14,7 @@ async def get_block_chunk_logs(w3, address, chunk: int):
 def test_1():
     alchemy_url = "https://eth-mainnet.g.alchemy.com/v2/EzCaMUftsyJk3sDarB8-hbnirCK4G1TE"
     address = "0x005e20fcf757b55d6e27dea9ba4f90c0b03ef852"
-    http_req = "https://api.etherscan.io/api?" \
+    acc_transactions_req = "https://api.etherscan.io/api?" \
         "module=account&" \
         "action=txlist&" \
         f"address={address}&" \
@@ -30,17 +25,25 @@ def test_1():
     if not w3.isConnected():
         raise EthConnecionError(f"Connection to {alchemy_url} failed - try again later.")
 
-    resp = requests.get(http_req)
+    resp = requests.get(acc_transactions_req)
     approval_transactions = []
     for val in json.loads(resp.text)["result"]:
         if val.get('functionName') and val['functionName'][:7] == 'approve':
-            approval_transactions.append(val['hash'])
+            approval_transactions.append(val)
 
     for approval in approval_transactions:
-        receipt = w3.eth.get_transaction_receipt(approval)
+        get_contract_abi_req = "https://api.etherscan.io/api" \
+                               "?module=contract" \
+                               "&action=getabi" \
+                               f"&address={approval['to']}" \
+                               "&apikey=FREVNA4UCC6VZ9VA8CQ99FQREKDVRZK9BN"
+        abi = json.loads(requests.get(get_contract_abi_req).text)["result"]
+        receipt = w3.eth.get_transaction_receipt(approval['hash'])
+        token_contract = w3.eth.contract(Web3.toChecksumAddress(approval['to']), abi=abi,
+                                         ContractFactoryClass=ConciseContract)
         for log in receipt.logs:
             val = '∞' if '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' else int(log.data, 16)
-            name = ''
+            name = token_contract.name()
             print(f"approval on {name} on amount of {val}")
 
 
